@@ -17,6 +17,8 @@ from astrbot.core.db.po import (
     CronJob,
     Persona,
     PersonaFolder,
+    PluginCatalogFolder,
+    PluginCatalogItem,
     PlatformMessageHistory,
     PlatformSession,
     PlatformStat,
@@ -24,6 +26,7 @@ from astrbot.core.db.po import (
     SessionProjectRelation,
     Stats,
 )
+from astrbot.core.sentinels import NOT_GIVEN
 
 
 @dataclass
@@ -361,6 +364,131 @@ class BaseDatabase(abc.ABC):
         ...
 
     # ====
+    # Folder Management
+    # ====
+
+    @abc.abstractmethod
+    async def insert_resource_folder(
+        self,
+        resource_type: str,
+        name: str,
+        parent_id: str | None = None,
+        description: str | None = None,
+        sort_order: int = 0,
+    ) -> T.Any:
+        """Insert a new folder for the specified resource type."""
+        ...
+
+    @abc.abstractmethod
+    async def get_resource_folder_by_id(
+        self, resource_type: str, folder_id: str
+    ) -> T.Any | None:
+        """Get a resource folder by its folder_id."""
+        ...
+
+    @abc.abstractmethod
+    async def get_resource_folders(
+        self, resource_type: str, parent_id: str | None = None
+    ) -> list[T.Any]:
+        """Get resource folders, optionally filtered by parent_id."""
+        ...
+
+    @abc.abstractmethod
+    async def get_all_resource_folders(self, resource_type: str) -> list[T.Any]:
+        """Get all folders for the specified resource type."""
+        ...
+
+    @abc.abstractmethod
+    async def update_resource_folder(
+        self,
+        resource_type: str,
+        folder_id: str,
+        name: str | None = None,
+        parent_id: T.Any = NOT_GIVEN,
+        description: T.Any = NOT_GIVEN,
+        sort_order: int | None = None,
+    ) -> T.Any | None:
+        """Update a folder for the specified resource type."""
+        ...
+
+    @abc.abstractmethod
+    async def delete_resource_folder(self, resource_type: str, folder_id: str) -> None:
+        """Delete a folder for the specified resource type."""
+        ...
+
+    @abc.abstractmethod
+    async def move_resource_to_folder(
+        self,
+        resource_type: str,
+        resource_id: str,
+        folder_id: str | None,
+    ) -> T.Any | None:
+        """Move a resource to a folder (or root if folder_id is None)."""
+        ...
+
+    @abc.abstractmethod
+    async def get_resources_by_folder(
+        self, resource_type: str, folder_id: str | None = None
+    ) -> list[T.Any]:
+        """Get all resources in a specific folder."""
+        ...
+
+    @abc.abstractmethod
+    async def batch_update_resource_sort_order(
+        self,
+        resource_type: str,
+        items: list[dict],
+    ) -> None:
+        """Batch update sort_order for resources and folders."""
+        ...
+
+    # ====
+    # Folder Resource Items
+    # ====
+
+    @abc.abstractmethod
+    async def get_all_resources(self, resource_type: str) -> list[T.Any]:
+        """Get all resources for the specified resource type."""
+        ...
+
+    @abc.abstractmethod
+    async def get_resource_by_id(
+        self, resource_type: str, resource_id: str
+    ) -> T.Any | None:
+        """Get a resource item by its ID."""
+        ...
+
+    @abc.abstractmethod
+    async def upsert_resource(
+        self,
+        resource_type: str,
+        resource_id: str,
+        folder_id: str | None = None,
+        sort_order: int = 0,
+    ) -> T.Any:
+        """Create or update a resource item."""
+        ...
+
+    @abc.abstractmethod
+    async def delete_resource(
+        self,
+        resource_type: str,
+        resource_id: str,
+    ) -> None:
+        """Delete a resource item."""
+        ...
+
+    @abc.abstractmethod
+    async def prune_resources(
+        self,
+        resource_type: str,
+        resource_ids: list[str],
+    ) -> None:
+        """Delete resource items not present in the provided IDs."""
+        ...
+
+
+    # ====
     # Persona Folder Management
     # ====
 
@@ -397,8 +525,8 @@ class BaseDatabase(abc.ABC):
         self,
         folder_id: str,
         name: str | None = None,
-        parent_id: T.Any = None,
-        description: T.Any = None,
+        parent_id: T.Any = NOT_GIVEN,
+        description: T.Any = NOT_GIVEN,
         sort_order: int | None = None,
     ) -> PersonaFolder | None:
         """Update a persona folder."""
